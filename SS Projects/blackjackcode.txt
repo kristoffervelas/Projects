@@ -1,0 +1,319 @@
+//variables
+//card organized by suits and in lists.
+var spadeSuit = ["As.png", "2s.png", "3s.png", "4s.png", "5s.png", "6s.png", "7s.png", "8s.png", "9s.png", "10s.png", "Js.png", "Qs.png", "Ks.png"];
+var heartSuit = ["Ah.png", "2h.png", "3h.png", "4h.png", "5h.png", "6h.png", "7h.png", "8h.png", "9h.png", "10h.png", "Jh.png", "Qh.png", "Kh.png"];
+var clubSuit = ["Ac.png", "2c.png", "3c.png", "4c.png", "5c.png", "6c.png", "7c.png", "8c.png", "9c.png", "10c.png", "Jc.png", "Qc.png", "Kc.png"];
+var diamondSuit = ["Ad.png", "2d.png", "3d.png", "4d.png", "5d.png", "6d.png", "7d.png", "8d.png", "9d.png", "10d.png", "Jd.png", "Qd.png", "Kd.png"];
+var cardback = "cardback.png";
+var card_art = spadeSuit[0];
+var money = 0;
+var userName;
+var bet = 1;
+var x = 3; //pretty much counter for whenever player hits
+var y = 3; //and this is counter for when dealer (computer) hits
+// lists for card values
+var playerList = [];
+var dealerList = [];
+// lists for card identitties
+var playerListI = [];
+var dealerListI = [];
+
+var fixed_value = 0;
+var d1 = 0;
+var p1 = 0;
+var totalDealerCards = 0;
+var totalUserCards = 0;
+var l = 1;
+var i = 1;
+var ace_counter_p1 = 0;
+var ace_counter_d1 = 0;
+var suit_type = 0;
+//MAIN
+
+//makes every card upside down or reset the decks
+function clearDeck(){
+  setProperty("dealercard1", "image", cardback);
+  setProperty("dealercard2", "image", cardback);
+  setProperty("dealercard3", "image", cardback);
+  setProperty("dealercard4", "image", cardback);
+  setProperty("dealercard5", "image", cardback);
+  setProperty("dealercard6", "image", cardback);
+  setProperty("usercard1", "image", cardback);
+  setProperty("usercard2", "image", cardback);
+  setProperty("usercard3", "image", cardback);
+  setProperty("usercard4", "image", cardback);
+  setProperty("usercard5", "image", cardback);
+  setProperty("usercard6", "image", cardback);
+}
+
+//picks a random suit for the cards
+function rand14(){
+  var card_suit = randomNumber(1, 4);
+  return card_suit;
+}
+
+//gets the suit type and gets the picture of the card based on the index of the parameter.
+function card_graphics(card_value){
+  suit_type = rand14();
+ 
+  if(suit_type == 1){
+    card_art = spadeSuit[card_value - 1];
+  } 
+  if(suit_type == 2){
+    card_art = heartSuit[card_value - 1];
+  } 
+  if(suit_type == 3){
+    card_art = clubSuit[card_value - 1];
+  } 
+  if(suit_type == 4){
+    card_art = diamondSuit[card_value - 1];
+  } 
+  return card_art;
+}
+//this starts the game and creates the first 6 cards for dealer and player.
+function startGame(){
+  i = 1;
+  ace_counter_p1 = 0;
+  ace_counter_d1 = 0;
+  //generates 6 card each for both the player and the dealer.
+  while(i <= 6){
+    d1 = generateCard();
+    p1 = generateCard();
+    playerListI[i] = p1;
+    playerList[i] = playerListI[i];
+    dealerListI[i] = d1;
+    dealerList[i] = dealerListI[i];
+    dealerList[i] = fixCardValue(dealerList[i]);
+    playerList[i] = fixCardValue(playerList[i]);
+    i++;
+  }
+  //this is for counting the aces for the player and the dealer but the first two cards
+  if(dealerList[1] == 11){
+    ace_counter_d1 = ace_counter_d1 + 1;
+  }
+  if (dealerList[2] == 11){
+    ace_counter_d1 = ace_counter_d1 + 1;
+  }
+  if(playerList[1] == 11){
+    ace_counter_p1 = ace_counter_p1 + 1;
+  }
+  if(playerList[2] == 11){
+    ace_counter_p1 = ace_counter_p1 + 1;
+  }
+  totalDealerCards = dealerList[1] + dealerList[2];
+  totalUserCards = playerList[1] + playerList[2];
+}
+
+
+//betting screen function
+onEvent("betPlayButton", "click", function(){
+  clearDeck();
+  money = money - bet;
+  totalUserCards = 0;
+  totalDealerCards = 0;
+  x = 3;
+  y = 3;
+  startGame();
+  setScreen("mainScreen");
+  setProperty("dealercard1", "image", card_graphics(dealerListI[1]));
+  setProperty("dealercard2", "image", card_graphics(dealerListI[2]));
+  setProperty("usercard1", "image", card_graphics(playerListI[1]));
+  setProperty("usercard2", "image", card_graphics(playerListI[2]));
+  updateScreen();
+  if((ace_counter_d1 >= 1) && (totalDealerCards > 21)){
+    totalDealerCards = totalDealerCards - 10;
+    ace_counter_d1 = ace_counter_d1 - 1;
+    }
+  //only does this part once
+  if(l == 1){
+  button("tieButton", "It's A Tie!");
+  setPosition("tieButton", -2, 150, 350, 80);
+  button("loseButton2", "You Lose!");
+  setPosition("loseButton2", -2, 150, 350, 80);
+  button("winButton", "You Win, Congratulations!");
+  setPosition("winButton", -1, 150, 350, 80);
+  hideElement("winButton");
+  hideElement("loseButton2");
+  hideElement("tieButton");
+  }
+  l = 2;
+  playSound("sound://category_board_games/card_fan_1.mp3", false);
+});
+
+  //player functions
+//hit function lets the player hit a card and the over 21 lose condition
+onEvent("hitButton", "click", function(){
+  playSound("sound://category_board_games/card_dealing_single.mp3", false);
+  //this adds one to the ace counter whenever there's an ace
+  if (playerList[x] == 11){
+    ace_counter_p1 = ace_counter_p1 + 1;
+  }
+  if (x == 3){
+    setProperty("usercard3", "image", card_graphics(playerListI[3]));
+  }
+  if (x == 4){
+    setProperty("usercard4", "image", card_graphics(playerListI[4]));
+  }
+  if (x == 5){
+    setProperty("usercard5", "image", card_graphics(playerListI[5]));
+  }
+  if (x == 6){
+    setProperty("usercard6", "image", card_graphics(playerListI[6]));
+  }
+  totalUserCards = totalUserCards + playerList[x];
+  x = x + 1;
+//this lets the aces, which is 11 in value, become 1 if the conditional is met, acts as sort of extra life
+  if((ace_counter_p1 >= 1) && (totalUserCards > 21)){
+    totalUserCards = totalUserCards - 10;
+    ace_counter_p1 = ace_counter_p1 - 1;
+  }
+//if user cards exceed 21, they lose
+  if(totalUserCards > 21){
+    loseFunction();
+  }
+  updateScreen();
+});
+
+//stay function which makes the dealer make a hit and determines the WIN condition and Lose if dealer beats user
+onEvent("stayButton", "click", function(){
+  while(totalDealerCards < 17){
+    playSound("sound://category_board_games/card_dealing_single.mp3", false);
+    if(dealerList[y] == 11){
+    ace_counter_d1 = ace_counter_d1 + 1;
+    }
+    totalDealerCards = totalDealerCards + dealerList[y];
+    if(y == 3){
+    setProperty("dealercard3", "image", card_graphics(dealerListI[3]));
+    }
+    if(y == 4){
+    setProperty("dealercard4", "image", card_graphics(dealerListI[4]));
+    }
+    if(y == 5){
+    setProperty("dealercard5", "image", card_graphics(dealerListI[5]));
+    }
+    if(y == 6){
+    setProperty("dealercard6", "image", card_graphics(dealerListI[6]));
+    }
+    y = y + 1;
+    if((ace_counter_d1 >= 1) && (totalDealerCards > 21)){
+    totalDealerCards = totalDealerCards - 10;
+    ace_counter_d1 = ace_counter_d1 - 1;
+    }
+  }
+  //if tied
+  if(totalUserCards == totalDealerCards){
+    playSound("sound://category_male_voiceover/tie_male.mp3", false);
+    tieFunction();
+  //WIN segment
+  }else if((totalUserCards > totalDealerCards) || (totalDealerCards > 21)){
+    playSound("sound://category_notifications/vibrant_game_ding_4.mp3", false);
+    money = money + (2 * bet);
+    hideElement("hitButton");
+    hideElement("stayButton");
+    showElement("winButton");
+    onEvent("winButton", "click", function(){
+      setScreen("betScreen");
+      //startGame();
+      hideElement("winButton");
+      showElement("hitButton");
+      showElement("stayButton");
+      setProperty("betMoney", "text", money);
+    });
+    //Lose segment
+  }else{
+    loseFunction();
+  }
+  updateScreen();
+  totalUserCards = 0;
+});
+
+//this function gives the individual cards their actual value in the game
+function generateCard(){
+  var randomNum = randomNumber(1, 13);
+  return randomNum;
+}
+
+//This converts the aces jacks queens and kings to their blackjack values which is 1/11 for Aces and 10 for others
+function fixCardValue(card_value){
+  if(card_value == 1){
+    fixed_value = 11;
+  }else if((card_value == 11)||(card_value == 12)||(card_value == 13)){
+    fixed_value = 10;
+  }else{fixed_value = card_value}
+  return fixed_value;
+}
+
+//This function is for starting the game, when you press this button.
+onEvent("playButton", "click", function(){
+  setScreen("betScreen");
+  userName = getText("nameInput");
+  console.log("Hello, " + userName + "!");
+  money = getNumber("moneyChoose");
+  setProperty("betMoney", "text", money);
+  updateScreen();
+  canBet();
+  playSound("sound://category_explosion/air_explode_bonus_5.mp3", false);
+  
+});
+
+//does nothing except for go back
+onEvent("exitButton", "click", function(){
+  setScreen("lockScreen");
+});
+//Updates the screen constant
+function updateScreen(){
+  setProperty("dealerTotal", "text", totalDealerCards);
+  setProperty("userTotal", "text", totalUserCards);
+  setProperty("moneyCount", "text", money);
+  setText("userTotalTitle", (userName + "'s Total Card Value:"));
+}
+
+//Checks if the value of the bet is still in the current budget.
+function canBet(){
+  onEvent("betValue", "change", function(){
+    bet = getNumber("betValue");
+    if(bet <= money){
+      showElement("betPlayButton");
+    }else{
+      hideElement("betPlayButton");
+    }
+    setProperty("betMoney", "text", money - bet);
+  });
+
+}
+//if tie happens
+function tieFunction(){
+  money = money + bet;
+  showElement("tieButton");
+  hideElement("hitButton");
+  hideElement("stayButton");
+  onEvent("tieButton", "click", function(){
+      setScreen("betScreen");
+      hideElement("tieButton");
+      showElement("hitButton");
+      showElement("stayButton");
+      setProperty("betMoney", "text", money);
+    });
+}
+//checks if player loses or wins
+function loseFunction(){
+    playSound("sound://category_instrumental/sax_downscale_1.mp3", false);
+    showElement("loseButton2");
+    hideElement("hitButton");
+    hideElement("stayButton");
+    onEvent("loseButton2", "click", function(){
+      setScreen("betScreen");
+      hideElement("loseButton2");
+      showElement("hitButton");
+      showElement("stayButton");
+      setProperty("betMoney", "text", money);
+    });
+    if(money <= 0){
+      playSound("sound://category_male_voiceover/game_over_male.mp3", false);
+      setScreen("lockScreen");
+      hideElement("loseButton2");
+      showElement("hitButton");
+      showElement("stayButton");
+    }
+}
+
